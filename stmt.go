@@ -22,10 +22,8 @@ func (stmt *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 		return nil, err
 	}
 
-	if hook := stmt.Proxy.Hooks.Exec; hook != nil {
-		if err := hook(stmt, args, result); err != nil {
-			return nil, err
-		}
+	if err := stmt.Proxy.Hooks.ExecFunc(stmt, args, result); err != nil {
+		return nil, err
 	}
 
 	return result, nil
@@ -37,10 +35,8 @@ func (stmt *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 		return nil, err
 	}
 
-	if hook := stmt.Proxy.Hooks.Query; hook != nil {
-		if err := hook(stmt, args, rows); err != nil {
-			return nil, err
-		}
+	if err := stmt.Proxy.Hooks.QueryFunc(stmt, args, rows); err != nil {
+		return nil, err
 	}
 
 	return rows, nil

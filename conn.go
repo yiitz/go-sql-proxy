@@ -29,11 +29,9 @@ func (conn *Conn) Begin() (driver.Tx, error) {
 		return nil, err
 	}
 
-	if hook := conn.Proxy.Hooks.Begin; hook != nil {
-		if err := hook(conn); err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+	if err := conn.Proxy.Hooks.BeginFunc(conn); err != nil {
+		tx.Rollback()
+		return nil, err
 	}
 
 	return &Tx{

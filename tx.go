@@ -12,11 +12,7 @@ func (tx *Tx) Commit() error {
 		return err
 	}
 
-	if hook := tx.Proxy.Hooks.Commit; hook != nil {
-		return hook(tx)
-	}
-
-	return nil
+	return tx.Proxy.Hooks.CommitFunc(tx)
 }
 
 func (tx *Tx) Rollback() error {
@@ -24,9 +20,5 @@ func (tx *Tx) Rollback() error {
 		return err
 	}
 
-	if hook := tx.Proxy.Hooks.Rollback; hook != nil {
-		return hook(tx)
-	}
-
-	return nil
+	return tx.Proxy.Hooks.RollbackFunc(tx)
 }

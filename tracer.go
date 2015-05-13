@@ -12,27 +12,27 @@ func NewTraceProxy(d driver.Driver, logger *log.Logger) *Proxy {
 		Driver: d,
 		Hooks: &Hooks{
 			Open: func(conn *Conn) error {
-				logger.Output(6, "Open")
+				logger.Output(7, "Open")
 				return nil
 			},
 			Exec: func(stmt *Stmt, args []driver.Value, result driver.Result) error {
-				logger.Output(6, fmt.Sprintf("Exec: %s; args = %v", stmt.QueryString, args))
+				logger.Output(7, fmt.Sprintf("Exec: %s; args = %v", stmt.QueryString, args))
 				return nil
 			},
 			Query: func(stmt *Stmt, args []driver.Value, rows driver.Rows) error {
-				logger.Output(8, fmt.Sprintf("Query: %s; args = %v", stmt.QueryString, args))
+				logger.Output(9, fmt.Sprintf("Query: %s; args = %v", stmt.QueryString, args))
 				return nil
 			},
 			Begin: func(conn *Conn) error {
-				logger.Output(6, "Begin")
+				logger.Output(7, "Begin")
 				return nil
 			},
 			Commit: func(tx *Tx) error {
-				logger.Output(6, "Commit")
+				logger.Output(7, "Commit")
 				return nil
 			},
 			Rollback: func(tx *Tx) error {
-				logger.Output(8, "Rollback")
+				logger.Output(9, "Rollback")
 				return nil
 			},
 		},
