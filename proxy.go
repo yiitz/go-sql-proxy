@@ -13,6 +13,7 @@ import (
 type Proxy struct {
 	Driver driver.Driver
 	hooks  hooks
+	translateMyToPg bool
 }
 
 // hooks is callback functions for the proxy.
@@ -1303,6 +1304,35 @@ func NewProxyContext(driver driver.Driver, hs ...*HooksContext) *Proxy {
 	return &Proxy{
 		Driver: driver,
 		hooks:  multipleHooks(hooksSlice),
+		translateMyToPg: false,
+	}
+}
+
+func NewProxyContextTranslate(driver driver.Driver, hs ...*HooksContext) *Proxy {
+	switch {
+	case len(hs) == 0:
+		return &Proxy{
+			Driver: driver,
+			translateMyToPg: true,
+		}
+	case len(hs) == 1 && hs[0] != nil:
+		return &Proxy{
+			Driver: driver,
+			hooks:  hs[0],
+			translateMyToPg: true,
+		}
+	}
+
+	hooksSlice := make([]hooks, 0, len(hs))
+	for _, hk := range hs {
+		if hk != nil {
+			hooksSlice = append(hooksSlice, hk)
+		}
+	}
+	return &Proxy{
+		Driver: driver,
+		hooks:  multipleHooks(hooksSlice),
+		translateMyToPg: true,
 	}
 }
 
@@ -1361,8 +1391,9 @@ func (p *Proxy) Open(name string) (driver.Conn, error) {
 	}
 
 	myconn = &Conn{
-		Conn:  conn,
-		Proxy: p,
+		Conn:           conn,
+		Proxy:          p,
+		translateCache: make(map[string]string),
 	}
 
 	if p.hooks != nil {

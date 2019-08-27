@@ -39,8 +39,9 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 	}
 
 	myconn = &Conn{
-		Conn:  conn,
-		Proxy: c.Proxy,
+		Conn:           conn,
+		Proxy:          c.Proxy,
+		translateCache: make(map[string]string),
 	}
 
 	if hooks != nil {

@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"strconv"
 )
 
 // Conn adds hook points into "database/sql/driver".Conn.
 type Conn struct {
 	Conn  driver.Conn
 	Proxy *Proxy
+	translateCache map[string]string
 }
 
 // Ping verifies a connection to the database is still alive.
@@ -52,6 +54,10 @@ func (conn *Conn) Prepare(query string) (driver.Stmt, error) {
 func (conn *Conn) PrepareContext(c context.Context, query string) (driver.Stmt, error) {
 	var stmt driver.Stmt
 	var err error
+
+	if conn.Proxy.translateMyToPg {
+		query = conn.translateMyToPg(query)
+	}
 	if connCtx, ok := conn.Conn.(driver.ConnPrepareContext); ok {
 		stmt, err = connCtx.PrepareContext(c, query)
 	} else {
@@ -175,6 +181,30 @@ func (conn *Conn) Exec(query string, args []driver.Value) (driver.Result, error)
 	panic("not supported")
 }
 
+func (conn *Conn) translateMyToPg(query string) string {
+
+	if r, ok := conn.translateCache[query];ok {
+		return r
+	}
+
+	rebound := make([]byte, 0, len(query))
+	currentVar := 1
+	for _,b := range query {
+		if b == '?' {
+			rebound = append(rebound,'$')
+			for _, ib := range strconv.Itoa(currentVar) {
+				rebound = append(rebound, byte(ib))
+			}
+			currentVar += 1
+		}else {
+			rebound = append(rebound, byte(b))
+		}
+	}
+	q := string(rebound)
+	conn.translateCache[query] = q
+	return q
+}
+
 // ExecContext calls the original Exec method of the connection.
 // It will trigger PreExec, Exec, PostExec hooks.
 //
@@ -183,6 +213,10 @@ func (conn *Conn) ExecContext(c context.Context, query string, args []driver.Nam
 	execer, ok := conn.Conn.(driver.Execer)
 	if !ok {
 		return nil, driver.ErrSkip
+	}
+
+	if conn.Proxy.translateMyToPg {
+		query = conn.translateMyToPg(query)
 	}
 
 	// set the hooks.
@@ -248,6 +282,10 @@ func (conn *Conn) QueryContext(c context.Context, query string, args []driver.Na
 	queryer, ok := conn.Conn.(driver.Queryer)
 	if !ok {
 		return nil, driver.ErrSkip
+	}
+
+	if conn.Proxy.translateMyToPg {
+		query = conn.translateMyToPg(query)
 	}
 
 	var stmt *Stmt
