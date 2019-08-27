@@ -262,8 +262,24 @@ func (conn *Conn) ExecContext(c context.Context, query string, args []driver.Nam
 		}
 	}
 
+	if conn.Proxy.translateMyToPg {
+		result = &pgResult{r:result}
+	}
 	return result, nil
 }
+
+type pgResult struct {
+	r driver.Result
+}
+
+func (r *pgResult) LastInsertId() (int64, error){
+	return -1, nil
+}
+
+func (r *pgResult) RowsAffected() (int64, error) {
+	return r.r.RowsAffected()
+}
+
 
 // Query executes a query that may return rows.
 // It wil trigger PreQuery, Query, PostQuery hooks.
